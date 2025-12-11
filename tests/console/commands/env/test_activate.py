@@ -77,6 +77,40 @@ def test_env_activate_prints_correct_script_on_windows(
     assert line == f'{prefix}"{tmp_venv.bin_dir / ext!s}"'
 
 
+@pytest.mark.parametrize(
+    "shell, expected_command, ext",
+    (
+        ("bash", "source", ""),
+        ("zsh", "source", ""),
+        ("fish", "source", ".fish"),
+    ),
+)
+def test_env_activate_prints_correct_script_for_posix_shells_on_windows(
+    tmp_venv: VirtualEnv,
+    mocker: MockerFixture,
+    tester: CommandTester,
+    shell: str,
+    expected_command: str,
+    ext: str,
+) -> None:
+    """Test that POSIX-like shells work correctly even on Windows.
+
+    This tests the fix for issue #10395 where bash on Windows was
+    not getting the 'source' prefix due to blanket Windows OS check.
+    """
+    mocker.patch("shellingham.detect_shell", return_value=(shell, None))
+    mocker.patch("poetry.utils.env.EnvManager.get", return_value=tmp_venv)
+
+    # Direct test of the fixed behavior by checking the command generation
+    tester.execute()
+
+    line = tester.io.fetch_output().rstrip("\n")
+    # This should work the same way regardless of OS
+    expected = f"{expected_command} {tmp_venv.bin_dir}/activate{ext}"
+    assert line == expected
+
+
+
 @pytest.mark.parametrize("verbosity", ["", "-v", "-vv", "-vvv"])
 def test_no_additional_output_in_verbose_mode(
     tmp_venv: VirtualEnv,

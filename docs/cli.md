@@ -879,6 +879,53 @@ See [Using plugins]({{< relref "plugins#using-plugins" >}}) and
 [Installing Poetry]({{< relref "docs#installation" >}}) for more information.
 {{% /warning %}}
 
+### Configuring Sources for Self Commands
+
+When working in environments that don't have direct access to PyPI (such as corporate networks), you may need to configure custom package sources for Poetry's self-update functionality.
+
+There are several ways to specify sources for `poetry self` commands:
+
+#### 1. System pyproject.toml Configuration
+
+Poetry maintains a system-level `pyproject.toml` file in your [configuration directory]({{< relref "configuration" >}}). You can add custom sources to this file, and they will be preserved during self-updates:
+
+**Location:**
+- **macOS:** `~/Library/Application Support/pypoetry/pyproject.toml`
+- **Windows:** `%APPDATA%\pypoetry\pyproject.toml`
+- **Unix/Linux:** `~/.config/pypoetry/pyproject.toml`
+
+**Example configuration:**
+```toml
+[[tool.poetry.source]]
+name = "corporate-pypi"
+url = "https://pypi.corporate.com/simple/"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "pypi-mirror"
+url = "https://pypi.example.org/simple/"
+priority = "supplemental"
+```
+
+#### 2. Repository Configuration via Poetry Config
+
+Configure repositories globally using Poetry's configuration system:
+
+```bash
+poetry config repositories.corporate-pypi https://pypi.corporate.com/simple/
+poetry config http-basic.corporate-pypi <username> <password>
+```
+
+#### 3. Using --source with self add
+
+When adding specific packages, you can specify the source directly:
+
+```bash
+poetry self add some-plugin --source corporate-pypi
+```
+
+For more details about repository configuration, see the [Repositories documentation]({{< relref "repositories" >}}).
+
 ### self add
 
 The `self add` command installs Poetry plugins and make them available at runtime. Additionally, it can
@@ -909,6 +956,12 @@ To add a keyring provider `artifacts-keyring`, you can run:
 
 ```bash
 poetry self add artifacts-keyring
+```
+
+To install a plugin from a specific source:
+
+```bash
+poetry self add poetry-plugin-export --source corporate-pypi
 ```
 
 #### Options
@@ -1017,6 +1070,8 @@ The `self update` command updates Poetry version in its current runtime environm
 {{% note %}}
 The `self update` command works exactly like the [`update` command](#update). However,
 is different in that the packages managed are for Poetry's runtime environment.
+
+To specify custom sources for the update process, configure them in your system `pyproject.toml` file as described in [Configuring Sources for Self Commands](#configuring-sources-for-self-commands).
 {{% /note %}}
 
 ```bash
